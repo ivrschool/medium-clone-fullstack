@@ -2,7 +2,7 @@
 
 A full-featured blogging platform built with Flask that replicates the core functionality and design of Medium.com. Features user authentication, story creation with a rich text editor, and a clean, responsive interface.
 
-![Medium Clone Screenshot](https://via.placeholder.com/800x400/1a5d1a/ffffff?text=Medium+Clone)
+![Medium Clone Screenshot](./attached_assets/Screenshot 2025-08-09 at 12.30.05 AM_1754724610093.png)
 
 ## 🌟 Features
 
@@ -188,7 +188,7 @@ For production environments:
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is for educational purposes only.
 
 ## 🎉 Acknowledgments
 
