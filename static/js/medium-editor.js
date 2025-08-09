@@ -27,6 +27,34 @@ document.addEventListener('DOMContentLoaded', function() {
         setupPlusButton();
         setupImageUpload();
         
+        // Ensure proper paragraph structure
+        contentInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                
+                // Create a new paragraph
+                const selection = window.getSelection();
+                const range = selection.getRangeAt(0);
+                
+                const p = document.createElement('p');
+                p.innerHTML = '<br>';
+                
+                // Insert the new paragraph
+                range.deleteContents();
+                range.insertNode(p);
+                
+                // Move cursor to new paragraph
+                const newRange = document.createRange();
+                newRange.setStart(p, 0);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+                
+                // Show plus button for new empty paragraph
+                setTimeout(() => showPlusButtonIfNeeded(), 10);
+            }
+        });
+        
         // Focus on title if it's empty
         if (!titleInput.textContent.trim()) {
             titleInput.focus();
@@ -351,85 +379,91 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show plus button on empty lines
         contentInput.addEventListener('click', handleContentClick);
         contentInput.addEventListener('keyup', handleContentKeyUp);
-        contentInput.addEventListener('focus', handleContentFocus);
+        contentInput.addEventListener('input', handleContentInput);
         
         function handleContentClick(e) {
-            console.log('Content clicked', e.target);
-            showPlusButtonIfNeeded(e.target);
+            setTimeout(() => showPlusButtonIfNeeded(), 10);
         }
         
         function handleContentKeyUp(e) {
-            console.log('Content key up', e.target);
-            showPlusButtonIfNeeded(e.target);
-        }
-        
-        function handleContentFocus(e) {
-            console.log('Content focused', e.target);
-            showPlusButtonIfNeeded(e.target);
-        }
-        
-        function showPlusButtonIfNeeded(element) {
-            console.log('Checking if plus button should show...');
-            
-            const selection = window.getSelection();
-            if (selection.rangeCount === 0) {
-                console.log('No selection range');
-                return;
+            if (e.key === 'Enter') {
+                setTimeout(() => showPlusButtonIfNeeded(), 10);
             }
+        }
+        
+        function handleContentInput(e) {
+            // Hide plus button when user starts typing
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const currentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE 
+                    ? range.commonAncestorContainer.parentNode 
+                    : range.commonAncestorContainer;
+                
+                if (currentElement.textContent && currentElement.textContent.trim()) {
+                    hidePlusButton();
+                } else {
+                    setTimeout(() => showPlusButtonIfNeeded(), 10);
+                }
+            }
+        }
+        
+        function showPlusButtonIfNeeded() {
+            const selection = window.getSelection();
+            if (selection.rangeCount === 0) return;
             
             const range = selection.getRangeAt(0);
+            let currentElement = range.commonAncestorContainer;
             
-            // Simplified logic: show plus button if content is empty or at start of empty paragraph
-            const contentText = contentInput.textContent.trim();
-            const isEmpty = contentText === '' || contentText === '\n';
+            // Find the current paragraph or create one if needed
+            if (currentElement.nodeType === Node.TEXT_NODE) {
+                currentElement = currentElement.parentNode;
+            }
             
-            console.log('Content check:', {
-                contentText: contentText,
-                isEmpty: isEmpty,
-                contentLength: contentText.length
-            });
+            // If we're in the contentInput directly, find or create a paragraph
+            if (currentElement === contentInput) {
+                // Look for an empty paragraph at cursor position
+                const children = Array.from(contentInput.children);
+                let targetParagraph = null;
+                
+                for (let child of children) {
+                    if (child.tagName === 'P' && !child.textContent.trim()) {
+                        targetParagraph = child;
+                        break;
+                    }
+                }
+                
+                // If no empty paragraph found, check if we're at the end
+                if (!targetParagraph && contentInput.textContent.trim() === '') {
+                    // Create a paragraph for empty content
+                    const p = document.createElement('p');
+                    p.innerHTML = '<br>';
+                    contentInput.appendChild(p);
+                    targetParagraph = p;
+                    
+                    // Move cursor to the new paragraph
+                    const newRange = document.createRange();
+                    newRange.setStart(p, 0);
+                    newRange.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                }
+                
+                currentElement = targetParagraph;
+            }
             
-            if (isEmpty) {
-                // Position the plus button at the cursor location
-                const rect = range.getBoundingClientRect();
+            // Show plus button for empty paragraphs
+            if (currentElement && currentElement.tagName === 'P' && !currentElement.textContent.trim()) {
+                const rect = currentElement.getBoundingClientRect();
                 const contentRect = contentInput.getBoundingClientRect();
                 
                 const top = Math.max(0, rect.top - contentRect.top + contentInput.scrollTop);
                 
-                console.log('Showing plus button at top:', top);
-                
                 plusButton.style.top = top + 'px';
                 plusButton.style.display = 'flex';
-                currentLine = contentInput;
-                
-                // Also check for empty paragraph
-                const currentNode = selection.anchorNode;
-                if (currentNode && currentNode.nodeType === Node.ELEMENT_NODE && currentNode.tagName === 'P') {
-                    if (!currentNode.textContent.trim()) {
-                        currentLine = currentNode;
-                    }
-                }
+                currentLine = currentElement;
             } else {
-                // Check if we're in an empty paragraph
-                let currentElement = range.commonAncestorContainer;
-                if (currentElement.nodeType === Node.TEXT_NODE) {
-                    currentElement = currentElement.parentNode;
-                }
-                
-                if (currentElement.tagName === 'P' && !currentElement.textContent.trim()) {
-                    const rect = currentElement.getBoundingClientRect();
-                    const contentRect = contentInput.getBoundingClientRect();
-                    
-                    const top = Math.max(0, rect.top - contentRect.top + contentInput.scrollTop);
-                    
-                    console.log('Showing plus button for empty paragraph at top:', top);
-                    
-                    plusButton.style.top = top + 'px';
-                    plusButton.style.display = 'flex';
-                    currentLine = currentElement;
-                } else {
-                    hidePlusButton();
-                }
+                hidePlusButton();
             }
         }
         
@@ -487,44 +521,48 @@ document.addEventListener('DOMContentLoaded', function() {
         
         function insertCodeBlock() {
             const codeBlockHtml = `
-                <div class="story-code-block" contenteditable="false">
-                    <div class="story-code-header">Code</div>
-                    <div class="story-code-content" contenteditable="true" placeholder="// Enter your code here"></div>
+                <div class="story-code-block" contenteditable="false" style="background-color: #f5f5f5; border: 1px solid #e6e6e6; border-radius: 8px; margin: 2rem 0; overflow: hidden;">
+                    <div class="story-code-header" style="background-color: #eee; padding: 8px 16px; border-bottom: 1px solid #ddd; font-size: 12px; color: #666; font-weight: 500;">Code</div>
+                    <div class="story-code-content" contenteditable="true" style="padding: 16px; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; outline: none; border: none; background: transparent; min-height: 100px;">// Enter your code here</div>
                 </div>
-                <p><br></p>
             `;
             insertAtCurrentPosition(codeBlockHtml);
         }
         
         function insertDivider() {
             const dividerHtml = `
-                <hr class="story-divider">
-                <p><br></p>
+                <hr class="story-divider" style="border: none; border-top: 1px solid #e6e6e6; margin: 3rem 0; position: relative;">
             `;
             insertAtCurrentPosition(dividerHtml);
         }
         
         function insertAtCurrentPosition(html) {
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                
-                // Clear current line if it's empty
-                if (currentLine && !currentLine.textContent.trim()) {
-                    currentLine.innerHTML = '';
+            if (currentLine && currentLine.tagName === 'P') {
+                // Replace current empty paragraph with the element
+                currentLine.outerHTML = html + '<p><br></p>';
+            } else {
+                // Insert at current cursor position
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const fragment = range.createContextualFragment(html + '<p><br></p>');
+                    range.deleteContents();
+                    range.insertNode(fragment);
+                    
+                    // Move cursor after inserted content
+                    range.collapse(false);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                } else {
+                    // Fallback: append to content
+                    contentInput.insertAdjacentHTML('beforeend', html + '<p><br></p>');
                 }
-                
-                const fragment = range.createContextualFragment(html);
-                range.deleteContents();
-                range.insertNode(fragment);
-                
-                // Move cursor after inserted content
-                range.collapse(false);
-                selection.removeAllRanges();
-                selection.addRange(range);
-                
-                hasUnsavedChanges = true;
             }
+            
+            hasUnsavedChanges = true;
+            
+            // Show plus button for new empty paragraph
+            setTimeout(() => showPlusButtonIfNeeded(), 100);
         }
     }
     
@@ -624,34 +662,46 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         function insertSelectedImage() {
-            if (!selectedFile || !currentImageRange) return;
+            if (!selectedFile) return;
             
             const reader = new FileReader();
             reader.onload = function(e) {
+                // Create image HTML with centered styling
                 const imageHtml = `
-                    <div class="story-image-container" contenteditable="false">
-                        <img src="${e.target.result}" alt="Story image" class="story-image">
-                        <div class="story-image-caption" contenteditable="true" placeholder="Add a caption (optional)"></div>
+                    <div class="story-image-container" contenteditable="false" style="text-align: center; margin: 2rem 0;">
+                        <img src="${e.target.result}" alt="Story image" class="story-image" style="max-width: 100%; height: auto; border-radius: 8px;">
+                        <div class="story-image-caption" contenteditable="true" style="margin-top: 12px; font-size: 14px; color: #666; font-style: italic; text-align: center;">Add a caption (optional)</div>
                     </div>
-                    <p><br></p>
                 `;
                 
-                // Insert image at saved range
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(currentImageRange);
-                
-                const fragment = currentImageRange.createContextualFragment(imageHtml);
-                currentImageRange.deleteContents();
-                currentImageRange.insertNode(fragment);
-                
-                // Move cursor after image
-                currentImageRange.collapse(false);
-                selection.removeAllRanges();
-                selection.addRange(currentImageRange);
+                // Insert image at current line or create new paragraph
+                if (currentLine && currentLine.tagName === 'P') {
+                    // Replace current empty paragraph with image
+                    currentLine.outerHTML = imageHtml + '<p><br></p>';
+                } else {
+                    // Insert at current cursor position
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        const fragment = range.createContextualFragment(imageHtml + '<p><br></p>');
+                        range.deleteContents();
+                        range.insertNode(fragment);
+                        
+                        // Move cursor after image
+                        range.collapse(false);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    } else {
+                        // Fallback: append to content
+                        contentInput.insertAdjacentHTML('beforeend', imageHtml + '<p><br></p>');
+                    }
+                }
                 
                 hasUnsavedChanges = true;
                 closeImageUploadModal();
+                
+                // Show plus button for new empty paragraph
+                setTimeout(() => showPlusButtonIfNeeded(), 100);
             };
             reader.readAsDataURL(selectedFile);
         }
