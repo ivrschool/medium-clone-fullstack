@@ -83,3 +83,4 @@ poetry.lock
 # Temporary files
 tmp/
 temp/
+.local/
