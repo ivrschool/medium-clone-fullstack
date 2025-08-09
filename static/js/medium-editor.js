@@ -341,41 +341,95 @@ document.addEventListener('DOMContentLoaded', function() {
         const plusMenu = document.getElementById('plus-menu');
         let currentLine = null;
         
+        console.log('Setting up plus button functionality', {plusButton, plusMenu});
+        
+        if (!plusButton || !plusMenu) {
+            console.error('Plus button elements not found');
+            return;
+        }
+        
         // Show plus button on empty lines
         contentInput.addEventListener('click', handleContentClick);
         contentInput.addEventListener('keyup', handleContentKeyUp);
+        contentInput.addEventListener('focus', handleContentFocus);
         
         function handleContentClick(e) {
+            console.log('Content clicked', e.target);
             showPlusButtonIfNeeded(e.target);
         }
         
         function handleContentKeyUp(e) {
+            console.log('Content key up', e.target);
+            showPlusButtonIfNeeded(e.target);
+        }
+        
+        function handleContentFocus(e) {
+            console.log('Content focused', e.target);
             showPlusButtonIfNeeded(e.target);
         }
         
         function showPlusButtonIfNeeded(element) {
+            console.log('Checking if plus button should show...');
+            
             const selection = window.getSelection();
-            if (selection.rangeCount === 0) return;
+            if (selection.rangeCount === 0) {
+                console.log('No selection range');
+                return;
+            }
             
             const range = selection.getRangeAt(0);
-            const container = range.commonAncestorContainer;
             
-            // Find the current paragraph or line
-            let currentElement = container.nodeType === Node.TEXT_NODE ? container.parentNode : container;
+            // Simplified logic: show plus button if content is empty or at start of empty paragraph
+            const contentText = contentInput.textContent.trim();
+            const isEmpty = contentText === '' || contentText === '\n';
             
-            // Check if we're in an empty paragraph or at the beginning of content
-            const isEmpty = !currentElement.textContent.trim() || 
-                           (currentElement === contentInput && contentInput.textContent.trim() === '');
+            console.log('Content check:', {
+                contentText: contentText,
+                isEmpty: isEmpty,
+                contentLength: contentText.length
+            });
             
-            if (isEmpty && contentInput.contains(currentElement)) {
+            if (isEmpty) {
+                // Position the plus button at the cursor location
                 const rect = range.getBoundingClientRect();
                 const contentRect = contentInput.getBoundingClientRect();
                 
-                plusButton.style.top = (rect.top - contentRect.top + contentInput.scrollTop) + 'px';
+                const top = Math.max(0, rect.top - contentRect.top + contentInput.scrollTop);
+                
+                console.log('Showing plus button at top:', top);
+                
+                plusButton.style.top = top + 'px';
                 plusButton.style.display = 'flex';
-                currentLine = currentElement;
+                currentLine = contentInput;
+                
+                // Also check for empty paragraph
+                const currentNode = selection.anchorNode;
+                if (currentNode && currentNode.nodeType === Node.ELEMENT_NODE && currentNode.tagName === 'P') {
+                    if (!currentNode.textContent.trim()) {
+                        currentLine = currentNode;
+                    }
+                }
             } else {
-                hidePlusButton();
+                // Check if we're in an empty paragraph
+                let currentElement = range.commonAncestorContainer;
+                if (currentElement.nodeType === Node.TEXT_NODE) {
+                    currentElement = currentElement.parentNode;
+                }
+                
+                if (currentElement.tagName === 'P' && !currentElement.textContent.trim()) {
+                    const rect = currentElement.getBoundingClientRect();
+                    const contentRect = contentInput.getBoundingClientRect();
+                    
+                    const top = Math.max(0, rect.top - contentRect.top + contentInput.scrollTop);
+                    
+                    console.log('Showing plus button for empty paragraph at top:', top);
+                    
+                    plusButton.style.top = top + 'px';
+                    plusButton.style.display = 'flex';
+                    currentLine = currentElement;
+                } else {
+                    hidePlusButton();
+                }
             }
         }
         
