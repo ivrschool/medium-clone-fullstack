@@ -701,6 +701,17 @@ body {
     }
 }
 
+/* Hide footer on editor pages when floating toolbar is present */
+body:has(.floating-toolbar) footer,
+body:has(.editor-container) footer {
+    display: none !important;
+}
+
+/* Alternative approach for older browsers */
+.floating-toolbar-active footer {
+    display: none !important;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {

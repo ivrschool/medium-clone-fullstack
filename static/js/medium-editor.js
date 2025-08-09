@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let autoSaveTimer;
     let hasUnsavedChanges = false;
+    let currentLine = null; // Global variable for plus button functionality
     
     // Initialize editor
     function initializeEditor() {
@@ -58,6 +59,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Focus on title if it's empty
         if (!titleInput.textContent.trim()) {
             titleInput.focus();
+        }
+        
+        // Hide footer on editor pages
+        const footer = document.querySelector('footer');
+        if (footer) {
+            footer.style.display = 'none';
         }
     }
     
@@ -367,7 +374,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupPlusButton() {
         const plusButton = document.getElementById('plus-button');
         const plusMenu = document.getElementById('plus-menu');
-        let currentLine = null;
         
         if (!plusButton || !plusMenu) {
             return;
