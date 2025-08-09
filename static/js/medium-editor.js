@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let autoSaveTimer;
     let hasUnsavedChanges = false;
     let currentLine = null; // Global variable for plus button functionality
+    let plusButton, plusMenu; // Global references for plus button elements
     
     // Initialize editor
     function initializeEditor() {
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 selection.addRange(newRange);
                 
                 // Show plus button for new empty paragraph
-                setTimeout(() => showPlusButtonIfNeeded(), 10);
+                setTimeout(() => window.showPlusButtonIfNeeded(), 10);
             }
         });
         
@@ -370,10 +371,82 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.removeItem('story_draft');
     }
     
+    // Global function for showing plus button
+    window.showPlusButtonIfNeeded = function() {
+        if (!plusButton || !plusMenu) return;
+        
+        const selection = window.getSelection();
+        if (selection.rangeCount === 0) return;
+        
+        const range = selection.getRangeAt(0);
+        let currentElement = range.commonAncestorContainer;
+        
+        // Find the current paragraph or create one if needed
+        if (currentElement.nodeType === Node.TEXT_NODE) {
+            currentElement = currentElement.parentNode;
+        }
+        
+        // If we're in the contentInput directly, find or create a paragraph
+        if (currentElement === contentInput) {
+            // Look for an empty paragraph at cursor position
+            const children = Array.from(contentInput.children);
+            let targetParagraph = null;
+            
+            for (let child of children) {
+                if (child.tagName === 'P' && !child.textContent.trim()) {
+                    targetParagraph = child;
+                    break;
+                }
+            }
+            
+            // If no empty paragraph found, check if we're at the end
+            if (!targetParagraph && contentInput.textContent.trim() === '') {
+                // Create a paragraph for empty content
+                const p = document.createElement('p');
+                p.innerHTML = '<br>';
+                contentInput.appendChild(p);
+                targetParagraph = p;
+                
+                // Move cursor to the new paragraph
+                const newRange = document.createRange();
+                newRange.setStart(p, 0);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            }
+            
+            currentElement = targetParagraph;
+        }
+        
+        // Show plus button for empty paragraphs
+        if (currentElement && currentElement.tagName === 'P' && !currentElement.textContent.trim()) {
+            const rect = currentElement.getBoundingClientRect();
+            const contentRect = contentInput.getBoundingClientRect();
+            
+            const top = Math.max(0, rect.top - contentRect.top + contentInput.scrollTop);
+            
+            plusButton.style.top = top + 'px';
+            plusButton.style.display = 'flex';
+            currentLine = currentElement;
+        } else {
+            hidePlusButton();
+        }
+    };
+    
+    function hidePlusButton() {
+        if (plusButton) {
+            plusButton.style.display = 'none';
+        }
+        if (plusMenu) {
+            plusMenu.style.display = 'none';
+            plusButton.classList.remove('active');
+        }
+    }
+
     // Plus Button Functionality
     function setupPlusButton() {
-        const plusButton = document.getElementById('plus-button');
-        const plusMenu = document.getElementById('plus-menu');
+        plusButton = document.getElementById('plus-button');
+        plusMenu = document.getElementById('plus-menu');
         
         if (!plusButton || !plusMenu) {
             return;
@@ -385,12 +458,12 @@ document.addEventListener('DOMContentLoaded', function() {
         contentInput.addEventListener('input', handleContentInput);
         
         function handleContentClick(e) {
-            setTimeout(() => showPlusButtonIfNeeded(), 10);
+            setTimeout(() => window.showPlusButtonIfNeeded(), 10);
         }
         
         function handleContentKeyUp(e) {
             if (e.key === 'Enter') {
-                setTimeout(() => showPlusButtonIfNeeded(), 10);
+                setTimeout(() => window.showPlusButtonIfNeeded(), 10);
             }
         }
         
@@ -406,74 +479,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (currentElement.textContent && currentElement.textContent.trim()) {
                     hidePlusButton();
                 } else {
-                    setTimeout(() => showPlusButtonIfNeeded(), 10);
+                    setTimeout(() => window.showPlusButtonIfNeeded(), 10);
                 }
             }
-        }
-        
-        function showPlusButtonIfNeeded() {
-            const selection = window.getSelection();
-            if (selection.rangeCount === 0) return;
-            
-            const range = selection.getRangeAt(0);
-            let currentElement = range.commonAncestorContainer;
-            
-            // Find the current paragraph or create one if needed
-            if (currentElement.nodeType === Node.TEXT_NODE) {
-                currentElement = currentElement.parentNode;
-            }
-            
-            // If we're in the contentInput directly, find or create a paragraph
-            if (currentElement === contentInput) {
-                // Look for an empty paragraph at cursor position
-                const children = Array.from(contentInput.children);
-                let targetParagraph = null;
-                
-                for (let child of children) {
-                    if (child.tagName === 'P' && !child.textContent.trim()) {
-                        targetParagraph = child;
-                        break;
-                    }
-                }
-                
-                // If no empty paragraph found, check if we're at the end
-                if (!targetParagraph && contentInput.textContent.trim() === '') {
-                    // Create a paragraph for empty content
-                    const p = document.createElement('p');
-                    p.innerHTML = '<br>';
-                    contentInput.appendChild(p);
-                    targetParagraph = p;
-                    
-                    // Move cursor to the new paragraph
-                    const newRange = document.createRange();
-                    newRange.setStart(p, 0);
-                    newRange.collapse(true);
-                    selection.removeAllRanges();
-                    selection.addRange(newRange);
-                }
-                
-                currentElement = targetParagraph;
-            }
-            
-            // Show plus button for empty paragraphs
-            if (currentElement && currentElement.tagName === 'P' && !currentElement.textContent.trim()) {
-                const rect = currentElement.getBoundingClientRect();
-                const contentRect = contentInput.getBoundingClientRect();
-                
-                const top = Math.max(0, rect.top - contentRect.top + contentInput.scrollTop);
-                
-                plusButton.style.top = top + 'px';
-                plusButton.style.display = 'flex';
-                currentLine = currentElement;
-            } else {
-                hidePlusButton();
-            }
-        }
-        
-        function hidePlusButton() {
-            plusButton.style.display = 'none';
-            plusMenu.style.display = 'none';
-            plusButton.classList.remove('active');
         }
         
         // Plus button click
@@ -565,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
             hasUnsavedChanges = true;
             
             // Show plus button for new empty paragraph
-            setTimeout(() => showPlusButtonIfNeeded(), 100);
+            setTimeout(() => window.showPlusButtonIfNeeded(), 100);
         }
     }
     
@@ -704,7 +712,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 closeImageUploadModal();
                 
                 // Show plus button for new empty paragraph
-                setTimeout(() => showPlusButtonIfNeeded(), 100);
+                setTimeout(() => window.showPlusButtonIfNeeded(), 100);
             };
             reader.readAsDataURL(selectedFile);
         }
