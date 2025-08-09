@@ -34,7 +34,7 @@
                         {{ form.content(style="display: none;", id="hidden-content") }}
                         {{ form.published(style="display: none;", id="hidden-published") }}
                         
-                        <div class="editor-writing-area">
+                        <div class="editor-writing-area" style="position: relative;">
                             <div class="title-input" 
                                  contenteditable="true" 
                                  data-placeholder="Title" 
@@ -49,6 +49,42 @@
                                  contenteditable="true" 
                                  data-placeholder="Tell your story..." 
                                  id="editable-content">{{ story.content|safe }}</div>
+                            
+                            <!-- Plus Button -->
+                            <div class="plus-button" id="plus-button">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            
+                            <!-- Plus Menu -->
+                            <div class="plus-menu" id="plus-menu">
+                                <div class="plus-menu-item image" data-action="image">
+                                    <div class="plus-menu-icon">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                    <div class="plus-menu-text">
+                                        <div class="plus-menu-title">Image</div>
+                                        <div class="plus-menu-desc">Upload an image from your device</div>
+                                    </div>
+                                </div>
+                                <div class="plus-menu-item code" data-action="code">
+                                    <div class="plus-menu-icon">
+                                        <i class="fas fa-code"></i>
+                                    </div>
+                                    <div class="plus-menu-text">
+                                        <div class="plus-menu-title">Code Block</div>
+                                        <div class="plus-menu-desc">Insert a formatted code snippet</div>
+                                    </div>
+                                </div>
+                                <div class="plus-menu-item divider" data-action="divider">
+                                    <div class="plus-menu-icon">
+                                        <i class="fas fa-minus"></i>
+                                    </div>
+                                    <div class="plus-menu-text">
+                                        <div class="plus-menu-title">Divider</div>
+                                        <div class="plus-menu-desc">Add a section break</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         {{ form.submit(style="display: none;", id="hidden-submit") }}
@@ -90,6 +126,32 @@
 <div class="status-indicator" id="status-indicator">
     <span class="status-text">{{ "Published" if story.published else "Draft" }}</span>
     <span class="auto-save-status" id="auto-save-status"></span>
+</div>
+
+<!-- Image Upload Modal -->
+<div class="image-upload-modal" id="image-upload-modal">
+    <div class="image-upload-content">
+        <div class="image-upload-header">
+            <h3>Upload Image</h3>
+        </div>
+        
+        <div class="image-upload-area" id="image-upload-area">
+            <div class="image-upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <p>Drag & drop an image here, or click to select</p>
+            <input type="file" id="image-file-input" accept="image/*" style="display: none;">
+        </div>
+        
+        <div id="image-preview-container" style="display: none;">
+            <img id="image-preview" class="image-preview" alt="Preview">
+        </div>
+        
+        <div class="image-upload-buttons">
+            <button type="button" class="btn btn-outline-secondary" id="cancel-image-upload">Cancel</button>
+            <button type="button" class="btn btn-primary" id="insert-image" disabled>Insert Image</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
