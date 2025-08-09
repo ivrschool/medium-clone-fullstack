@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <article class="story-article">
+                <header class="mb-5">
+                    <h1 class="display-5 fw-bold mb-3">{{ story.title }}</h1>
+                    {% if story.subtitle %}
+                        <h2 class="fs-4 text-muted mb-4">{{ story.subtitle }}</h2>
+                    {% endif %}
+                    
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="author-info me-3">
+                            <div class="d-flex align-items-center">
+                                <div class="author-avatar me-2">
+                                    <i class="fas fa-user-circle fa-2x text-muted"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold">
+                                        <a href="{{ url_for('author_profile', username=story.author.username) }}" class="text-decoration-none text-dark">
+                                            {{ story.author.username }}
+                                        </a>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ story.created_at.strftime('%b %d, %Y') }} · {{ story.get_reading_time() }} min read
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if current_user.is_authenticated and current_user == story.author %}
+                        <div class="mb-4">
+                            <a href="{{ url_for('edit_story', id=story.id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-edit"></i> Edit Story
+                            </a>
+                        </div>
+                    {% endif %}
+                </header>
+                
+                <div class="story-content">
+                    {{ story.content|safe }}
+                </div>
+            </article>
+        </div>
+    </div>
+</div>
+{% endblock %}
