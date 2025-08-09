@@ -1,59 +1,104 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <h2 class="mb-4">Edit Story</h2>
-            
-            <form method="POST">
-                {{ form.hidden_tag() }}
-                
-                <div class="mb-4">
-                    {{ form.title.label(class="form-label") }}
-                    {{ form.title(class="form-control form-control-lg") }}
-                    {% for error in form.title.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+<div class="editor-container">
+    <div class="editor-header">
+        <div class="container-fluid">
+            <div class="row align-items-center py-3">
+                <div class="col-6">
+                    <a href="{{ url_for('dashboard') }}" class="text-decoration-none text-muted">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
                 </div>
-                
-                <div class="mb-4">
-                    {{ form.subtitle.label(class="form-label") }}
-                    {{ form.subtitle(class="form-control") }}
-                    {% for error in form.subtitle.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                
-                <div class="mb-4">
-                    {{ form.content.label(class="form-label") }}
-                    {{ form.content(class="form-control", id="story-content") }}
-                    {% for error in form.content.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                
-                <div class="mb-4">
-                    <div class="form-check">
-                        {{ form.published(class="form-check-input") }}
-                        {{ form.published.label(class="form-check-label") }}
-                    </div>
-                </div>
-                
-                <div class="d-flex gap-2">
-                    {{ form.submit(class="btn btn-success", value="Update Story") }}
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                <div class="col-6 text-end">
                     {% if story.published %}
-                        <a href="{{ url_for('read_story', slug=story.slug) }}" class="btn btn-outline-primary">View Story</a>
+                        <a href="{{ url_for('read_story', slug=story.slug) }}" class="btn btn-outline-primary btn-sm me-2">View Story</a>
                     {% endif %}
+                    <button type="button" class="btn btn-outline-success btn-sm me-2" id="save-draft">Save Draft</button>
+                    <button type="button" class="btn btn-success btn-sm" id="publish-story">{{ "Update" if story.published else "Publish" }}</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
+    
+    <div class="editor-content">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <form method="POST" id="story-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Hidden fields for form submission -->
+                        {{ form.title(style="display: none;", id="hidden-title") }}
+                        {{ form.subtitle(style="display: none;", id="hidden-subtitle") }}
+                        {{ form.content(style="display: none;", id="hidden-content") }}
+                        {{ form.published(style="display: none;", id="hidden-published") }}
+                        
+                        <div class="editor-writing-area">
+                            <div class="title-input" 
+                                 contenteditable="true" 
+                                 data-placeholder="Title" 
+                                 id="editable-title">{{ story.title }}</div>
+                            
+                            <div class="subtitle-input" 
+                                 contenteditable="true" 
+                                 data-placeholder="Subtitle (optional)" 
+                                 id="editable-subtitle">{{ story.subtitle or '' }}</div>
+                            
+                            <div class="story-input" 
+                                 contenteditable="true" 
+                                 data-placeholder="Tell your story..." 
+                                 id="editable-content">{{ story.content|safe }}</div>
+                        </div>
+                        
+                        {{ form.submit(style="display: none;", id="hidden-submit") }}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating toolbar -->
+    <div class="floating-toolbar" id="floating-toolbar" style="display: none;">
+        <button type="button" class="toolbar-btn" data-command="bold" title="Bold">
+            <i class="fas fa-bold"></i>
+        </button>
+        <button type="button" class="toolbar-btn" data-command="italic" title="Italic">
+            <i class="fas fa-italic"></i>
+        </button>
+        <button type="button" class="toolbar-btn" data-command="underline" title="Underline">
+            <i class="fas fa-underline"></i>
+        </button>
+        <div class="toolbar-separator"></div>
+        <button type="button" class="toolbar-btn" data-heading="h1" title="Heading 1">H1</button>
+        <button type="button" class="toolbar-btn" data-heading="h2" title="Heading 2">H2</button>
+        <button type="button" class="toolbar-btn" data-heading="h3" title="Heading 3">H3</button>
+        <div class="toolbar-separator"></div>
+        <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List">
+            <i class="fas fa-list-ul"></i>
+        </button>
+        <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Numbered List">
+            <i class="fas fa-list-ol"></i>
+        </button>
+        <button type="button" class="toolbar-btn" data-command="createLink" title="Link">
+            <i class="fas fa-link"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Status indicator -->
+<div class="status-indicator" id="status-indicator">
+    <span class="status-text">{{ "Published" if story.published else "Draft" }}</span>
+    <span class="auto-save-status" id="auto-save-status"></span>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-<script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+<script>
+    // Set initial values for editing
+    window.initialStoryData = {
+        published: {{ story.published|tojson }}
+    };
+</script>
+<script src="{{ url_for('static', filename='js/medium-editor.js') }}"></script>
 {% endblock %}
