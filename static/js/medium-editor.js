@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } catch (e) {
-                console.log('Could not load draft from storage');
+                // Could not load draft from storage
             }
         }
     }
@@ -369,10 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const plusMenu = document.getElementById('plus-menu');
         let currentLine = null;
         
-        console.log('Setting up plus button functionality', {plusButton, plusMenu});
-        
         if (!plusButton || !plusMenu) {
-            console.error('Plus button elements not found');
             return;
         }
         
